@@ -21,6 +21,7 @@ import EntityClustering.RicochetSRClustering;
 import EntityMatching.ProfileMatcher;
 import Utilities.Enumerations.RepresentationModel;
 import Utilities.Enumerations.SimilarityMetric;
+
 import java.util.List;
 import java.util.ListIterator;
 
@@ -34,20 +35,31 @@ public class YDSMatcher {
 
         // Maximum list length parameter
         int iMaxListSize = Integer.MAX_VALUE;
-        if (args.length > 0) {
-            iMaxListSize = Integer.valueOf(args[0]);
-            System.err.println("WARNING: Using only " + iMaxListSize + " records,"
-                    + " due to command line limit argument...");
+        if (args.length < 1){
+            System.err.println("Missing parameters file");
+            return;
         }
+        // read all relevant properties
+        PropertiesParser pparser = new PropertiesParser(args[0]);
+        String input_file = pparser.getInput();
+        if (input_file.isEmpty()){
+            System.err.println("Missing input parameter!");
+            return;
+        }
+        // read entities from text files
+        SimpleReader sr = new SimpleReader();
+        List<EntityProfile> lpEntities = sr.read_data(input_file);
 
         // Read entities
-        EntityCSVReader ecrReader = new EntityCSVReader("./Data/YDS TED big sellers to match - companies to match.csv");
-        ecrReader.setAttributeNamesInFirstRow(true);
-        List<EntityProfile> lpEntities = ecrReader.getEntityProfiles().subList(0, iMaxListSize);
+        // EntityCSVReader ecrReader = new EntityCSVReader(input_file);
+        // ecrReader.setAttributeNamesInFirstRow(true);
+        // List<EntityProfile> lpEntities = ecrReader.getEntityProfiles().subList(0, iMaxListSize);
 
         // TODO: Cache results
         boolean bCacheOK = false;
         SimilarityPairs lspPairs = null;
+        SimilarityMetric sim = pparser.getSimilarity();
+        RepresentationModel repr = pparser.getRepresentation();
         if (!bCacheOK) {
             // Create and process blocks
             IBlockBuilding block = new StandardBlocking();
@@ -60,8 +72,7 @@ public class YDSMatcher {
             lbBlocks = bpComparisonCleaning.refineBlocks(lbBlocks);
 
             // Measure similarities
-            ProfileMatcher pm = new ProfileMatcher(RepresentationModel.CHARACTER_TRIGRAMS,
-                    SimilarityMetric.COSINE_SIMILARITY);
+            ProfileMatcher pm = new ProfileMatcher(repr, sim);
             lspPairs = pm.executeComparisons(lbBlocks, lpEntities);
         }
 
@@ -79,7 +90,7 @@ public class YDSMatcher {
             // Using only first list
             ListIterator<Integer> li1 = liFirst.listIterator();
 
-            // For each entity in cluster (only 
+            // For each entity in cluster
             while (li1.hasNext()) {
                 // get index
                 int i1 = li1.next();

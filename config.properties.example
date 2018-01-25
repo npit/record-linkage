@@ -1,0 +1,6 @@
+maxlist =
+# cosine, jaccard
+similarity = cosine
+representation = bow
+# input file or folder. csv suffixies are autoread by the default entity reader
+input = /path/to/input/data

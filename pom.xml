@@ -10,6 +10,8 @@
             <groupId>jedai-core</groupId>
             <artifactId>jedaiLibrary</artifactId>
             <version>1.1</version>
+	    <scope> system </scope>
+	    <systemPath>${project.basedir}/dependencyJars/jedaiLibrary-1.1.jar</systemPath>
         </dependency>
     </dependencies>
     <properties>
