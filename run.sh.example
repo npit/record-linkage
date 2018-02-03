@@ -23,17 +23,17 @@ if [ ! -e "${newsgroups_data_dir}" ]; then
     wget -q "http://qwone.com/~jason/20Newsgroups/20news-19997.tar.gz"
     [ -z "$(which gunzip)" ] && sudo apt install gunzip
     gunzip 20news-19997.tar.gz && tar xf 20news-19997.tar.gz
-    cd "${cur_dir}"
 fi
 # Multiling mms sources
 if [ ! -e "${multiling_data_dir}" ]; then
-
-    cd "${cur_dir}"
+    echo "Multiling data directory does not exist."
+    exit(1)
 fi
+cd "${cur_dir}"
 
 # populate evaluator config file
 
 # run evaluator
 cd "${cur_dir}"
 echo "Running evaluator..."
-./execute.sh
+./execute.sh > results.txt

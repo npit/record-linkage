@@ -6,9 +6,14 @@ import Utilities.Enumerations.SimilarityMetric;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.*;
 
 public class PropertiesParser {
     Properties props;
+    boolean verbosity;
+    public void verbose(String msg){
+        if(verbosity) System.out.println(msg);
+    }
     public PropertiesParser(String propsFile){
         props = new Properties();
         // read properties file
@@ -17,6 +22,8 @@ public class PropertiesParser {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        verbosity = props.getProperty("verbosity","").toLowerCase().equals("true");
+
     }
     // methods retrieving props jedai parameters
     public SimilarityMetric getSimilarity(){
@@ -29,6 +36,19 @@ public class PropertiesParser {
             System.err.println("Undefined similarity param:" + similarity_str);
             return null;
         }
+    }
+    public boolean getVerbosity(){
+        return verbosity;
+    }
+    public List<String> getLanguages(){
+        String langs = props.getProperty("languages","");
+        if (langs.isEmpty()) return new ArrayList<>();
+        String [] parts = langs.trim().split(",");
+        for(int i=0;i<parts.length;++i){
+            parts[i] = parts[i].trim();
+            verbose("Read lang: [" + parts[i]+"]");
+        }
+        return Arrays.asList(parts);
     }
     public RepresentationModel getRepresentation(){
         String repr_str = props.getProperty("representation");

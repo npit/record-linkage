@@ -46,9 +46,17 @@ public class YDSMatcher {
             System.err.println("Missing input parameter!");
             return;
         }
+        YDSMatcher.verbosity = pparser.getVerbosity();
         // read entities from text files
-        SimpleReader sr = new SimpleReader();
+        verbose("\nReading data.");
+        SimpleReader sr = new SimpleReader(pparser.getLanguages(), pparser.getVerbosity());
         List<EntityProfile> lpEntities = sr.read_data(input_file);
+        verbose("Done reading data!");
+        if(lpEntities.isEmpty()){
+            verbose("No data to cluster!");
+            return;
+        }
+        else verbose("Working on " + lpEntities.size() + " data.");
 
         // Read entities
         // EntityCSVReader ecrReader = new EntityCSVReader(input_file);
@@ -56,6 +64,7 @@ public class YDSMatcher {
         // List<EntityProfile> lpEntities = ecrReader.getEntityProfiles().subList(0, iMaxListSize);
 
         // TODO: Cache results
+        verbose("\nMapping to representations");
         boolean bCacheOK = false;
         SimilarityPairs lspPairs = null;
         SimilarityMetric sim = pparser.getSimilarity();
@@ -75,16 +84,24 @@ public class YDSMatcher {
             ProfileMatcher pm = new ProfileMatcher(repr, sim);
             lspPairs = pm.executeComparisons(lbBlocks, lpEntities);
         }
+        verbose("Done mapping comparisons");
 
         // Perform clustering
+        verbose("\nClustering");
         IEntityClustering ie = new RicochetSRClustering();
         List<EquivalenceCluster> lClusters = ie.getDuplicates(lspPairs);
+        verbose("Done clustering");
 
         // Show clusters
         // For every cluster
+        int totalCount = 0;
+        int nonZeroCount = 0;
         for (EquivalenceCluster ecCur : lClusters) {
-            System.out.println("--- Cluster " + ecCur.toString() + " :");
+            ++ totalCount;
             List<Integer> liFirst = ecCur.getEntityIdsD1();
+            if(liFirst.isEmpty()) continue;
+            ++ nonZeroCount;
+            // System.out.println(String.format("Cluster %d/%d (%d non-zero)", totalCount, lClusters.size(), nonZeroCount) + " :");
 
             // Second list not applicable in "dirty list" scenario
             // Using only first list
@@ -98,11 +115,19 @@ public class YDSMatcher {
                 // get entities
                 EntityProfile ep1 = lpEntities.get(i1);
 
-                // Output profiles
-                System.out.println(entityProfileToString(ep1));
+                // Output profiles indexes in the cluster
+                // System.out.println(entityProfileToString(ep1));
+                System.out.print(i1 + " ");
             }
+            System.out.println();
         }
 
+    }
+    static boolean verbosity;
+
+    public static void verbose(String msg){
+        if(!YDSMatcher.verbosity) return;
+        System.out.println(msg);
     }
 
     public static String entityProfileToString(EntityProfile epToRender) {
