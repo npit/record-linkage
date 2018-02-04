@@ -2,8 +2,11 @@ maxlist =
 # cosine, jaccard
 similarity = cosine
 representation = bow
-# input file or folder. csv suffixies are autoread by the default entity reader
-input = /path/to/input/data
+# input file or folder. csv or json suffixies are autoread by the default entity reader
+input_folder = /path/to/input/data/folder
+read_order = /path/to/read/order/file
+# entities (name, type, offset, length ) per line , csv or raw (raw text)
+read_mode = entities
 languages = english, spanish, french
 # misc
 verbosity = true

@@ -27,7 +27,7 @@ fi
 # Multiling mms sources
 if [ ! -e "${multiling_data_dir}" ]; then
     echo "Multiling data directory does not exist."
-    exit(1)
+    exit 1
 fi
 cd "${cur_dir}"
 

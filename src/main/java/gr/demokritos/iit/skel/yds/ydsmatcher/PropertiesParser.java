@@ -37,6 +37,9 @@ public class PropertiesParser {
             return null;
         }
     }
+    public String getReadMode(){
+        return props.getProperty("read_mode","");
+    }
     public boolean getVerbosity(){
         return verbosity;
     }
@@ -61,8 +64,11 @@ public class PropertiesParser {
             return null;
         }
     }
-    public String getInput(){
-        return props.getProperty("input","");
+    public String getInputFolder(){
+        return props.getProperty("input_folder","");
+    }
+    public String getReadOrder(){
+        return props.getProperty("read_order","");
     }
 
 }

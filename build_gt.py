@@ -6,6 +6,7 @@ Construct the ground truth for each dataset
 """
 
 def parse_multiling(infile):
+    print("Parsing multiling")
     # multiling msms source texts
     # set wether ground truth:
     # should span multiple languages: "multilingual"
@@ -40,12 +41,12 @@ def parse_multiling(infile):
             if t not in topics_to_files:
                 topics_to_files[t] = []
 
-        for i, topic in enumerate(lang_topics):
-            for f in langfiles[i]:
+        for topic_idx, topic in enumerate(lang_topics):
+            for f in langfiles[topic_idx]:
                 file_index = len(files_mapping)
-                files_mapping[f] = file_index
+                files_mapping[join(lang, f)] = file_index
                 files_to_topics[file_index] = topic
-                topics_to_files[topic].append(files_mapping[f])
+                topics_to_files[topic].append(files_mapping[join(lang, f)])
 
     # write file to file index
     with open("multiling_gt_files2idxs.txt","w") as f:
@@ -62,8 +63,47 @@ def parse_multiling(infile):
 
 
 def parse_newsgroups(infile):
-    # 20 newsgroups
-    pass
+    print("Parsing 20 newsgroups:")
+    # 20 newsgroups sources
+    # set wether ground truth:
+    # should span multiple languages: "multilingual"
+    # should be language-specific: "separate"
+    files_mapping = {}
+    topics_mapping = {}
+    topics_to_files = {}
+    files_to_topics = {}
+
+
+    for topic_idx, topic in enumerate(os.listdir(infile)):
+        print("Parsing topic:", topic)
+        topics_mapping[topic] = len(topics_mapping)
+        topics_to_files[topic_idx] = []
+        topicfiles = sorted(os.listdir(join(infile,topic)))
+
+
+        for i, file in enumerate(topicfiles):
+            file_index = len(files_mapping)
+            files_mapping[join(topic,file)] = file_index
+            files_to_topics[file_index] = topic_idx
+            topics_to_files[topic_idx].append(file_index)
+
+    # write topic to topic index
+    with open("20newsgroups_gt_topics2idxs.txt","w") as f:
+        for topic in topics_mapping:
+            f.write("%s %d\n" % (topic, topics_mapping[topic]))
+    # write file to file index
+    with open("20newsgroups_gt_files2idxs.txt","w") as f:
+        for file in files_mapping:
+            f.write("%s %d\n" % (file, files_mapping[file]))
+    # write gt per topic
+    with open("20newsgroups_gt_topics2files.txt","w") as f:
+        for topic in topics_to_files:
+            topic_idx = topics_to_files[topic]
+            f.write("%s %s\n" % (topic_idx, " ".join([str(x) for x in topics_to_files[topic]])))
+    # write gt per file index
+    with open("20newsgroups_gt_files2topics.txt","w") as f:
+        for fileidx in files_to_topics:
+            f.write("%d %d\n" % (fileidx, files_to_topics[fileidx]))
 
 
 
@@ -77,5 +117,7 @@ if __name__ == "__main__":
         print("Nothing to do.")
         exit(1)
 
-    parse_multiling(args.mling)
-    parse_newsgroups(args.news)
+    if args.mling:
+        parse_multiling(args.mling)
+    if args.news:
+        parse_newsgroups(args.news)

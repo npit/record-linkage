@@ -15,7 +15,6 @@ import DataModel.Attribute;
 import DataModel.EntityProfile;
 import DataModel.EquivalenceCluster;
 import DataModel.SimilarityPairs;
-import DataReader.EntityReader.EntityCSVReader;
 import EntityClustering.IEntityClustering;
 import EntityClustering.RicochetSRClustering;
 import EntityMatching.ProfileMatcher;
@@ -30,9 +29,7 @@ import java.util.ListIterator;
  * @author ggianna
  */
 public class YDSMatcher {
-
     public static void main(String[] args) {
-
         // Maximum list length parameter
         int iMaxListSize = Integer.MAX_VALUE;
         if (args.length < 1){
@@ -41,16 +38,17 @@ public class YDSMatcher {
         }
         // read all relevant properties
         PropertiesParser pparser = new PropertiesParser(args[0]);
-        String input_file = pparser.getInput();
-        if (input_file.isEmpty()){
+        String input_folder = pparser.getInputFolder();
+        String read_order_file = pparser.getReadOrder();
+        if (input_folder.isEmpty()){
             System.err.println("Missing input parameter!");
             return;
         }
         YDSMatcher.verbosity = pparser.getVerbosity();
         // read entities from text files
         verbose("\nReading data.");
-        SimpleReader sr = new SimpleReader(pparser.getLanguages(), pparser.getVerbosity());
-        List<EntityProfile> lpEntities = sr.read_data(input_file);
+        SimpleReader sr = new SimpleReader(pparser.getLanguages(), pparser.getVerbosity(), pparser.getReadMode());
+        List<EntityProfile> lpEntities = sr.read_data(input_folder, read_order_file);
         verbose("Done reading data!");
         if(lpEntities.isEmpty()){
             verbose("No data to cluster!");
