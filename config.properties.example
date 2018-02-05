@@ -5,7 +5,11 @@ representation = bow
 # input file or folder. csv or json suffixies are autoread by the default entity reader
 input_folder = /path/to/input/data/folder
 read_order = /path/to/read/order/file
-# entities (name, type, offset, length ) per line , csv or raw (raw text)
+# read mode:
+# entities (name, type, offset, length ) per line
+# csv
+# similarities (csv with file pairs and various attributes per column
+# or raw (raw text)
 read_mode = entities
 languages = english, spanish, french
 # misc

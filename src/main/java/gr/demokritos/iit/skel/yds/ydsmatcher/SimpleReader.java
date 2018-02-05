@@ -1,13 +1,12 @@
 package gr.demokritos.iit.skel.yds.ydsmatcher;
 
 import DataModel.EntityProfile;
+import DataModel.SimilarityPairs;
 import DataReader.EntityReader.EntityCSVReader;
+import Utilities.Enumerations.SimilarityMetric;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public class SimpleReader {
     List<String> langs;
@@ -22,14 +21,14 @@ public class SimpleReader {
         this.read_mode = read_mode;
     }
 
-    public List<EntityProfile> read_data(String path, String read_order){
-        if(! new File(read_order).exists()){
-            System.err.println("Read order path does not exist!" + path);
+    public List<Pair<String,Integer>>  getReadOrder(String read_order_file){
+        List<Pair<String,Integer>> readorder = new ArrayList<>();
+        if(! new File(read_order_file).exists()){
+            System.err.println("Read order path does not exist!" + read_order_file);
             return null;
         }
-        List<Pair<String,Integer>> readorder = new ArrayList<>();
         try {
-            BufferedReader bf = new BufferedReader(new FileReader(read_order));
+            BufferedReader bf = new BufferedReader(new FileReader(read_order_file));
             String line;
             while((line = bf.readLine()) != null){
                 String [] parts = line.trim().split(" ");
@@ -47,7 +46,15 @@ public class SimpleReader {
                 return stringIntegerPair.d2.compareTo(t1.d2);
             }
         });
+        return readorder;
+    }
+
+
+
+    public List<EntityProfile> read_data(String path, String read_order_file){
+        List<Pair<String,Integer>>  readorder = getReadOrder(read_order_file);
         List<EntityProfile> elist = new ArrayList<>();
+
         for(Pair<String,Integer> p : readorder){
             String full_path = path + "/" + p.d1;
             verbose("Reading file "  + (p.d2+1) + "/" + readorder.size() + ", idx: " + p.d2 + ", path " + full_path);
@@ -156,6 +163,71 @@ public class SimpleReader {
         verbose("Reader : csv");
         EntityCSVReader reader = new EntityCSVReader(ff.getAbsolutePath());
         return reader.getEntityProfiles();
+    }
+    public SimilarityPairs readSimilaritiesFile(String filepath, String readOrderPath, SimilarityMetric similarity){
+        verbose("Loading existing pairwise comparisons from " + filepath);
+        // get readorder to hashmap, skipping preceeding folder
+        HashMap<String,Integer> readorder = new HashMap<>();
+        List<Pair<String,Integer>> rdo = getReadOrder(readOrderPath);
+        for(Pair<String,Integer> p : rdo) readorder.put(p.d1.substring(p.d1.indexOf("/")+1),p.d2);
+
+        // read the similarities file
+        List<String> names1 = new ArrayList<>();
+        List<String> names2 = new ArrayList<>();
+        List<Integer> idxs1 = new ArrayList<>();
+        List<Integer> idxs2 = new ArrayList<>();
+        List<Double> sims = new ArrayList<>();
+        String simfield = "";
+        if (similarity == SimilarityMetric.GRAPH_NORMALIZED_VALUE_SIMILARITY)
+            simfield="n-gram graph NVS";
+        else if(similarity == SimilarityMetric.COSINE_SIMILARITY)
+            simfield="cosine val";
+
+        int count = 0;
+        int simFieldIndex = -1;
+        ArrayList<String> header = new ArrayList<>();
+        try{
+            BufferedReader bf = new BufferedReader(new FileReader(filepath));
+            String line;
+            while((line = bf.readLine()) != null){
+                String[] parts = line.split(",");
+                if (count++ == 0){
+                    header.addAll(Arrays.asList(parts));
+                    simFieldIndex = header.indexOf(simfield);
+                    continue;
+                }
+                String name1 = parts[0];
+                String name2 = parts[1];
+                sims.add(Double.parseDouble(parts[simFieldIndex]));
+                names1.add(name1);
+                names2.add(name2);
+                // get index of that name
+                int idx = -1;
+                if(!readorder.containsKey(name1)) {
+                    System.err.println("Cannot find " + name1 + " in readorder.");
+                    continue;
+                }
+                if(!readorder.containsKey(name2)) {
+                    System.err.println("Cannot find " + name2 + " in readorder.");
+                    continue;
+                }
+                idxs1.add(readorder.get(name1));
+                idxs2.add(readorder.get(name2));
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int [] idxs1arr = idxs1.stream().mapToInt(i->i).toArray();
+        int [] idxs2arr = idxs2.stream().mapToInt(i->i).toArray();
+        double [] simsarr = sims.stream().mapToDouble(i->i).toArray();
+        SimilarityPairs sp = new SimilarityPairs(false, new ArrayList<>());
+        sp.setEntityIds1(idxs1arr);
+        sp.setEntityIds2(idxs2arr);
+        sp.setSimilarities(simsarr);
+        return sp;
+
     }
 
 }

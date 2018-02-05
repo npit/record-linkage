@@ -64,8 +64,8 @@ public class PropertiesParser {
             return null;
         }
     }
-    public String getInputFolder(){
-        return props.getProperty("input_folder","");
+    public String getInputPath(){
+        return props.getProperty("input_path","");
     }
     public String getReadOrder(){
         return props.getProperty("read_order","");

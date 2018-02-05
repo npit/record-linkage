@@ -30,6 +30,7 @@ import java.util.ListIterator;
  */
 public class YDSMatcher {
     public static void main(String[] args) {
+        Timer timer = new Timer();
         // Maximum list length parameter
         int iMaxListSize = Integer.MAX_VALUE;
         if (args.length < 1){
@@ -38,56 +39,71 @@ public class YDSMatcher {
         }
         // read all relevant properties
         PropertiesParser pparser = new PropertiesParser(args[0]);
-        String input_folder = pparser.getInputFolder();
+        String input_path = pparser.getInputPath();
         String read_order_file = pparser.getReadOrder();
-        if (input_folder.isEmpty()){
+        if (input_path.isEmpty()){
             System.err.println("Missing input parameter!");
             return;
         }
         YDSMatcher.verbosity = pparser.getVerbosity();
-        // read entities from text files
-        verbose("\nReading data.");
-        SimpleReader sr = new SimpleReader(pparser.getLanguages(), pparser.getVerbosity(), pparser.getReadMode());
-        List<EntityProfile> lpEntities = sr.read_data(input_folder, read_order_file);
-        verbose("Done reading data!");
-        if(lpEntities.isEmpty()){
-            verbose("No data to cluster!");
-            return;
-        }
-        else verbose("Working on " + lpEntities.size() + " data.");
-
-        // Read entities
-        // EntityCSVReader ecrReader = new EntityCSVReader(input_file);
-        // ecrReader.setAttributeNamesInFirstRow(true);
-        // List<EntityProfile> lpEntities = ecrReader.getEntityProfiles().subList(0, iMaxListSize);
-
-        // TODO: Cache results
-        verbose("\nMapping to representations");
-        boolean bCacheOK = false;
         SimilarityPairs lspPairs = null;
-        SimilarityMetric sim = pparser.getSimilarity();
-        RepresentationModel repr = pparser.getRepresentation();
-        if (!bCacheOK) {
-            // Create and process blocks
-            IBlockBuilding block = new StandardBlocking();
-            List<AbstractBlock> lbBlocks = block.getBlocks(lpEntities);
+        List<EntityProfile> lpEntities = null;
+        // read entities from text files
+        String read_mode = pparser.getReadMode();
+        SimpleReader sr = new SimpleReader(pparser.getLanguages(), pparser.getVerbosity(), read_mode);
 
-            IBlockProcessing bpProcessor = new SizeBasedBlockPurging();
-            lbBlocks = bpProcessor.refineBlocks(lbBlocks);
+        if (! read_mode.equals("similarities")) {
+            verbose("\nReading data.");
+            lpEntities = sr.read_data(input_path, read_order_file);
+            verbose("Done reading data!");
+            if (lpEntities.isEmpty()) {
+                verbose("No data to cluster!");
+                return;
+            } else verbose("Working on " + lpEntities.size() + " data.");
 
-            IBlockProcessing bpComparisonCleaning = new WeightedEdgePruning();
-            lbBlocks = bpComparisonCleaning.refineBlocks(lbBlocks);
+            // Read entities
+            // EntityCSVReader ecrReader = new EntityCSVReader(input_file);
+            // ecrReader.setAttributeNamesInFirstRow(true);
+            // List<EntityProfile> lpEntities = ecrReader.getEntityProfiles().subList(0, iMaxListSize);
 
-            // Measure similarities
-            ProfileMatcher pm = new ProfileMatcher(repr, sim);
-            lspPairs = pm.executeComparisons(lbBlocks, lpEntities);
+            // TODO: Cache results
+            verbose("\nMapping to representations");
+            boolean bCacheOK = false;
+            SimilarityMetric sim = pparser.getSimilarity();
+            RepresentationModel repr = pparser.getRepresentation();
+            if (!bCacheOK) {
+                timer.tic("block building");
+                // Create and process blocks
+                IBlockBuilding block = new StandardBlocking();
+                List<AbstractBlock> lbBlocks = block.getBlocks(lpEntities);
+
+                IBlockProcessing bpProcessor = new SizeBasedBlockPurging();
+                lbBlocks = bpProcessor.refineBlocks(lbBlocks);
+
+                IBlockProcessing bpComparisonCleaning = new WeightedEdgePruning();
+                lbBlocks = bpComparisonCleaning.refineBlocks(lbBlocks);
+                timer.toc("block building");
+
+                // Measure similarities
+                timer.tic("Similarity mapping");
+                ProfileMatcher pm = new ProfileMatcher(repr, sim);
+                lspPairs = pm.executeComparisons(lbBlocks, lpEntities);
+                timer.toc("Similarity mapping");
+            }
+            verbose("Done mapping comparisons");
         }
-        verbose("Done mapping comparisons");
+        else{
+            // directly use supplied similarities from a file
+            lspPairs = sr.readSimilaritiesFile(pparser.getInputPath(),pparser.getReadOrder(),pparser.getSimilarity());
+
+        }
 
         // Perform clustering
+        timer.tic("Clustering");
         verbose("\nClustering");
         IEntityClustering ie = new RicochetSRClustering();
-        List<EquivalenceCluster> lClusters = ie.getDuplicates(lspPairs);
+        List<EquivalenceCluster> lClusters = ie.getDuplicates((SimilarityPairs)lspPairs);
+        timer.toc("Clustering");
         verbose("Done clustering");
 
         // Show clusters
@@ -111,7 +127,7 @@ public class YDSMatcher {
                 int i1 = li1.next();
 
                 // get entities
-                EntityProfile ep1 = lpEntities.get(i1);
+                // EntityProfile ep1 = lpEntities.get(i1);
 
                 // Output profiles indexes in the cluster
                 // System.out.println(entityProfileToString(ep1));
