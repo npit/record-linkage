@@ -165,10 +165,11 @@ public class SimpleReader {
         return reader.getEntityProfiles();
     }
     public SimilarityPairs readSimilaritiesFile(String filepath, String readOrderPath, String simfield){
-        verbose("Loading existing pairwise comparisons from " + filepath);
+        verbose("Loading existing pairwise comparisons from [" + filepath + "]");
         // get readorder to hashmap, skipping preceeding folder
         HashMap<String,Integer> readorder = new HashMap<>();
         List<Pair<String,Integer>> rdo = getReadOrder(readOrderPath);
+	if(rdo == null) return null;
         // for(Pair<String,Integer> p : rdo) readorder.put(p.d1.substring(p.d1.indexOf("/")+1),p.d2);
         for(Pair<String,Integer> p : rdo) readorder.put(p.d1, p.d2);
 
@@ -201,26 +202,28 @@ public class SimpleReader {
                 String name2 = parts[1];
                 double sim = Double.parseDouble(parts[simFieldIndex]);
                 sims.add(sim);
-                verbose("Reading simlarity value for pair " + name1 + "," + name2 + ":" + sim );
+                verbose("Reading simlarity value for pair " + (count+1)  + ":" + name1 + "," + name2 + ":" + sim );
                 names1.add(name1);
                 names2.add(name2);
                 // get index of that name
                 int idx = -1;
                 if(!readorder.containsKey(name1)) {
                     System.err.println("Cannot find " + name1 + " in readorder.");
-                    continue;
+                    return null;
                 }
                 if(!readorder.containsKey(name2)) {
                     System.err.println("Cannot find " + name2 + " in readorder.");
-                    continue;
+                    return null;
                 }
                 idxs1.add(readorder.get(name1));
                 idxs2.add(readorder.get(name2));
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+	    return null;
         } catch (IOException e) {
             e.printStackTrace();
+	    return null;
         }
         int [] idxs1arr = idxs1.stream().mapToInt(i->i).toArray();
         int [] idxs2arr = idxs2.stream().mapToInt(i->i).toArray();

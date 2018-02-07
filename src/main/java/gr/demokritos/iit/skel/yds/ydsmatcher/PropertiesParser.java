@@ -22,12 +22,12 @@ public class PropertiesParser {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        verbosity = props.getProperty("verbosity","").toLowerCase().equals("true");
+        verbosity = props.getProperty("verbosity","").trim().toLowerCase().equals("true");
 
     }
     // methods retrieving props jedai parameters
     public SimilarityMetric getSimilarity(){
-        String similarity_str = props.getProperty("similarity");
+        String similarity_str = props.getProperty("similarity").trim();
         if(similarity_str.toLowerCase().equals("jaccard"))
             return SimilarityMetric.JACCARD_SIMILARITY;
         else if(similarity_str.toLowerCase().equals("cosine"))
@@ -37,15 +37,15 @@ public class PropertiesParser {
             return null;
         }
     }
-    public String getSimilarityCSVField(){ return props.getProperty("sim_field","");}
+    public String getSimilarityCSVField(){ return props.getProperty("sim_field","").trim();}
     public String getReadMode(){
-        return props.getProperty("read_mode","");
+        return props.getProperty("read_mode","").trim();
     }
     public boolean getVerbosity(){
         return verbosity;
     }
     public List<String> getLanguages(){
-        String langs = props.getProperty("languages","");
+        String langs = props.getProperty("languages","").trim();
         if (langs.isEmpty()) return new ArrayList<>();
         String [] parts = langs.trim().split(",");
         for(int i=0;i<parts.length;++i){
@@ -55,7 +55,7 @@ public class PropertiesParser {
         return Arrays.asList(parts);
     }
     public RepresentationModel getRepresentation(){
-        String repr_str = props.getProperty("representation");
+        String repr_str = props.getProperty("representation").trim();
         if(repr_str.toLowerCase().equals("bow"))
             return RepresentationModel.TOKEN_UNIGRAMS_TF_IDF;
         else if(repr_str.toLowerCase().equals("ngg"))
@@ -66,10 +66,10 @@ public class PropertiesParser {
         }
     }
     public String getInputPath(){
-        return props.getProperty("input_path","");
+        return props.getProperty("input_path","").trim();
     }
     public String getReadOrder(){
-        return props.getProperty("read_order","");
+        return props.getProperty("read_order","").trim();
     }
 
 }

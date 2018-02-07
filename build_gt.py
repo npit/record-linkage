@@ -75,10 +75,10 @@ def parse_newsgroups(infile):
 
 
     for topic_idx, topic in enumerate(os.listdir(infile)):
-        print("Parsing topic:", topic)
         topics_mapping[topic] = len(topics_mapping)
         topics_to_files[topic_idx] = []
         topicfiles = sorted(os.listdir(join(infile,topic)))
+        print("Parsing topic:", topic,"with %d files" % len(topicfiles))
 
 
         for i, file in enumerate(topicfiles):
