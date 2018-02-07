@@ -4,6 +4,7 @@ import DataModel.EntityProfile;
 import DataModel.SimilarityPairs;
 import DataReader.EntityReader.EntityCSVReader;
 import Utilities.Enumerations.SimilarityMetric;
+import com.opencsv.CSVReader;
 
 import java.io.*;
 import java.util.*;
@@ -164,12 +165,29 @@ public class SimpleReader {
         EntityCSVReader reader = new EntityCSVReader(ff.getAbsolutePath());
         return reader.getEntityProfiles();
     }
+
     public SimilarityPairs readSimilaritiesFile(String filepath, String readOrderPath, String simfield){
         verbose("Loading existing pairwise comparisons from [" + filepath + "]");
+
+        Timer.tictell("csvread");
+        List<String[]> data = null;
+        try {
+            CSVReader reader = new CSVReader(new FileReader(filepath));
+            data = reader.readAll();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (data == null) return null;
+        System.out.println("Num read:" + data.size());
+
+        Timer.toctell("csvread");
+
         // get readorder to hashmap, skipping preceeding folder
         HashMap<String,Integer> readorder = new HashMap<>();
         List<Pair<String,Integer>> rdo = getReadOrder(readOrderPath);
-	if(rdo == null) return null;
+        if(rdo == null) return null;
         // for(Pair<String,Integer> p : rdo) readorder.put(p.d1.substring(p.d1.indexOf("/")+1),p.d2);
         for(Pair<String,Integer> p : rdo) readorder.put(p.d1, p.d2);
 
@@ -180,54 +198,29 @@ public class SimpleReader {
         List<Integer> idxs2 = new ArrayList<>();
         List<Double> sims = new ArrayList<>();
 
-        int count = 0;
-        int simFieldIndex = -1;
-        ArrayList<String> header = new ArrayList<>();
-        try{
-            BufferedReader bf = new BufferedReader(new FileReader(filepath));
-            String line;
-            while((line = bf.readLine()) != null){
-                String[] parts = line.split(",");
-                if (count++ == 0){
-                    header.addAll(Arrays.asList(parts));
-                    simFieldIndex = header.indexOf(simfield);
-                    if (simFieldIndex < 0){
-                        System.err.println("Could not find similarity field: [" + simfield + "]");
-                        System.err.println("Available fields:" + header);
-                        return null;
-                    }
-                    continue;
-                }
-                String name1 = parts[0];
-                String name2 = parts[1];
-                double sim = Double.parseDouble(parts[simFieldIndex]);
-                sims.add(sim);
-                verbose("Reading simlarity value for pair " + (count+1)  + ":" + name1 + "," + name2 + ":" + sim );
-                names1.add(name1);
-                names2.add(name2);
-                // get index of that name
-                int idx = -1;
-                if(!readorder.containsKey(name1)) {
-                    System.err.println("Cannot find " + name1 + " in readorder.");
-                    return null;
-                }
-                if(!readorder.containsKey(name2)) {
-                    System.err.println("Cannot find " + name2 + " in readorder.");
-                    return null;
-                }
-                idxs1.add(readorder.get(name1));
-                idxs2.add(readorder.get(name2));
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-	    return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-	    return null;
+
+        int simFieldIndex =0;
+        for(;simFieldIndex <data.get(0).length; ++simFieldIndex ){
+            if(data.get(0)[simFieldIndex ].equals(simfield)) break;
         }
+        if(simFieldIndex  == data.get(0).length){
+            System.err.println("Could not find similarity field:" + simfield +" in the header :" + data.get(0));
+        }
+        data.remove(0);
+        int count = 0;
+        Timer.tictell("Parse csv");
+        for (String[] datum : data) {
+            ++count;
+            idxs1.add(readorder.get(datum[0]));
+            idxs2.add(readorder.get(datum[1]));
+            sims.add(Double.parseDouble(datum[simFieldIndex]));
+        }
+        Timer.toctell("Parse csv");
+        Timer.tictell("Convert to jedai-compatible structs");
         int [] idxs1arr = idxs1.stream().mapToInt(i->i).toArray();
         int [] idxs2arr = idxs2.stream().mapToInt(i->i).toArray();
         double [] simsarr = sims.stream().mapToDouble(i->i).toArray();
+        Timer.toctell("Convert to jedai-compatible structs");
         SimilarityPairs sp = new SimilarityPairs(false, new ArrayList<>());
         sp.setEntityIds1(idxs1arr);
         sp.setEntityIds2(idxs2arr);
