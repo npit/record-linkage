@@ -37,6 +37,7 @@ public class PropertiesParser {
             return null;
         }
     }
+    public String getSimilarityCSVField(){ return props.getProperty("sim_field","");}
     public String getReadMode(){
         return props.getProperty("read_mode","");
     }

@@ -5,6 +5,9 @@ import java.util.HashMap;
 
 public class Timer {
     HashMap<String,Long> times;
+    public Timer(){
+        times = new HashMap<>();
+    }
     public void tic(String msg){
         if (times.containsKey(msg)){
             System.err.println("Already contain a tic with header " + msg + "!");

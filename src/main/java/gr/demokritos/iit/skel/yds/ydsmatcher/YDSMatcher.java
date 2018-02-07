@@ -94,7 +94,10 @@ public class YDSMatcher {
         }
         else{
             // directly use supplied similarities from a file
-            lspPairs = sr.readSimilaritiesFile(pparser.getInputPath(),pparser.getReadOrder(),pparser.getSimilarity());
+            lspPairs = sr.readSimilaritiesFile(pparser.getInputPath(),pparser.getReadOrder(),pparser.getSimilarityCSVField());
+            if (lspPairs == null){
+                return;
+            }
 
         }
 
@@ -115,7 +118,7 @@ public class YDSMatcher {
             List<Integer> liFirst = ecCur.getEntityIdsD1();
             if(liFirst.isEmpty()) continue;
             ++ nonZeroCount;
-            // System.out.println(String.format("Cluster %d/%d (%d non-zero)", totalCount, lClusters.size(), nonZeroCount) + " :");
+            verbose(String.format("Cluster %d/%d (%d non-zero)", totalCount, lClusters.size(), nonZeroCount) + " :");
 
             // Second list not applicable in "dirty list" scenario
             // Using only first list
@@ -125,12 +128,6 @@ public class YDSMatcher {
             while (li1.hasNext()) {
                 // get index
                 int i1 = li1.next();
-
-                // get entities
-                // EntityProfile ep1 = lpEntities.get(i1);
-
-                // Output profiles indexes in the cluster
-                // System.out.println(entityProfileToString(ep1));
                 System.out.print(i1 + " ");
             }
             System.out.println();

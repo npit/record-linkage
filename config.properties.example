@@ -5,6 +5,7 @@ representation = bow
 # input file or folder. csv or json suffixies are autoread by the default entity reader
 input_folder = /path/to/input/data/folder
 read_order = /path/to/read/order/file
+sim_field = nvs_sim
 # read mode:
 # entities (name, type, offset, length ) per line
 # csv

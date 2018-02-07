@@ -164,12 +164,13 @@ public class SimpleReader {
         EntityCSVReader reader = new EntityCSVReader(ff.getAbsolutePath());
         return reader.getEntityProfiles();
     }
-    public SimilarityPairs readSimilaritiesFile(String filepath, String readOrderPath, SimilarityMetric similarity){
+    public SimilarityPairs readSimilaritiesFile(String filepath, String readOrderPath, String simfield){
         verbose("Loading existing pairwise comparisons from " + filepath);
         // get readorder to hashmap, skipping preceeding folder
         HashMap<String,Integer> readorder = new HashMap<>();
         List<Pair<String,Integer>> rdo = getReadOrder(readOrderPath);
-        for(Pair<String,Integer> p : rdo) readorder.put(p.d1.substring(p.d1.indexOf("/")+1),p.d2);
+        // for(Pair<String,Integer> p : rdo) readorder.put(p.d1.substring(p.d1.indexOf("/")+1),p.d2);
+        for(Pair<String,Integer> p : rdo) readorder.put(p.d1, p.d2);
 
         // read the similarities file
         List<String> names1 = new ArrayList<>();
@@ -177,11 +178,6 @@ public class SimpleReader {
         List<Integer> idxs1 = new ArrayList<>();
         List<Integer> idxs2 = new ArrayList<>();
         List<Double> sims = new ArrayList<>();
-        String simfield = "";
-        if (similarity == SimilarityMetric.GRAPH_NORMALIZED_VALUE_SIMILARITY)
-            simfield="n-gram graph NVS";
-        else if(similarity == SimilarityMetric.COSINE_SIMILARITY)
-            simfield="cosine val";
 
         int count = 0;
         int simFieldIndex = -1;
@@ -194,11 +190,18 @@ public class SimpleReader {
                 if (count++ == 0){
                     header.addAll(Arrays.asList(parts));
                     simFieldIndex = header.indexOf(simfield);
+                    if (simFieldIndex < 0){
+                        System.err.println("Could not find similarity field: [" + simfield + "]");
+                        System.err.println("Available fields:" + header);
+                        return null;
+                    }
                     continue;
                 }
                 String name1 = parts[0];
                 String name2 = parts[1];
-                sims.add(Double.parseDouble(parts[simFieldIndex]));
+                double sim = Double.parseDouble(parts[simFieldIndex]);
+                sims.add(sim);
+                verbose("Reading simlarity value for pair " + name1 + "," + name2 + ":" + sim );
                 names1.add(name1);
                 names2.add(name2);
                 // get index of that name
