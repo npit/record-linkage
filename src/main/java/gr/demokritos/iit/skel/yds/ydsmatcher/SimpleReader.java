@@ -25,7 +25,7 @@ public class SimpleReader {
     public List<Pair<String,Integer>>  getReadOrder(String read_order_file){
         List<Pair<String,Integer>> readorder = new ArrayList<>();
         if(! new File(read_order_file).exists()){
-            System.err.println("Read order path does not exist!" + read_order_file);
+            System.err.println("Read order path does not exist: [" + read_order_file + "]");
             return null;
         }
         try {
@@ -39,7 +39,7 @@ public class SimpleReader {
         catch (IOException e) {
             e.printStackTrace();
         }
-        verbose("Read " + readorder.size() + " readorder items.");
+        verbose("Read " + readorder.size() + " readorder items from [" + read_order_file + "].");
         // sort in increasing index order
         Collections.sort(readorder, new Comparator<Pair<String, Integer>>() {
             @Override
@@ -56,6 +56,7 @@ public class SimpleReader {
         List<Pair<String,Integer>>  readorder = getReadOrder(read_order_file);
         List<EntityProfile> elist = new ArrayList<>();
 
+        verbose("Reading data from path:[" + path + "]");
         for(Pair<String,Integer> p : readorder){
             String full_path = path + "/" + p.d1;
             verbose("Reading file "  + (p.d2+1) + "/" + readorder.size() + ", idx: " + p.d2 + ", path " + full_path);
@@ -64,7 +65,6 @@ public class SimpleReader {
             }catch(Exception ex){
                 System.out.println(ex.getMessage());
             }
-            if (elist.size() > 200) break;
         }
         return elist;
     }
