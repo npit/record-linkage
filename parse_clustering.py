@@ -1,7 +1,7 @@
 import sys
 import argparse
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
+#from sklearn.metrics import precision_recall_curve
+#from sklearn.metrics import average_precision_score
 
 
 """
@@ -10,8 +10,8 @@ Parse clustering results
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("gt")
-    parser.add_argument("res")
+    parser.add_argument("gt", help = "Ground truth. Space-delimited file indexes per line.")
+    parser.add_argument("res", help = "Clustering results. Space-delimited file indexes per line.")
     parser.add_argument("--name")
     args = parser.parse_args()
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     with open(args.res) as f:
         for line in f:
             idxs = line.strip().split()
-            # map to topics
+            # map file indexes to topics indexes
             topics = [files2topics[f] for f in idxs]
             # cluster topic : the most common. if not a single most common, discard
             counts = [(x,topics.count(x)) for x in set(topics)]

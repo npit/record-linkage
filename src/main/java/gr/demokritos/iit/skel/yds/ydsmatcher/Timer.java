@@ -60,7 +60,7 @@ public class Timer {
         if (secs < 60) return String.format("%d secs, %d msecs",secs, msecs);
         long mins =  secs / 60;
         secs = secs % 60;
-        if (mins < 60) return String.format("%d mins %d secs, %d msecs",secs, msecs);
+        if (mins < 60) return String.format("%d mins %d secs, %d msecs",mins, secs, msecs);
         String str =  Long.toString(secs);
         return str;
     }
