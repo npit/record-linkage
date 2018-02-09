@@ -21,6 +21,9 @@ import EntityMatching.ProfileMatcher;
 import Utilities.Enumerations.RepresentationModel;
 import Utilities.Enumerations.SimilarityMetric;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -30,7 +33,6 @@ import java.util.ListIterator;
  */
 public class YDSMatcher {
     public static void main(String[] args) {
-        Timer timer = new Timer();
         // Maximum list length parameter
         int iMaxListSize = Integer.MAX_VALUE;
         if (args.length < 1){
@@ -71,8 +73,9 @@ public class YDSMatcher {
             boolean bCacheOK = false;
             SimilarityMetric sim = pparser.getSimilarity();
             RepresentationModel repr = pparser.getRepresentation();
+            if (repr == null) return;
             if (!bCacheOK) {
-                timer.tic("block building");
+                Timer.tic("block building");
                 // Create and process blocks
                 IBlockBuilding block = new StandardBlocking();
                 List<AbstractBlock> lbBlocks = block.getBlocks(lpEntities);
@@ -82,13 +85,14 @@ public class YDSMatcher {
 
                 IBlockProcessing bpComparisonCleaning = new WeightedEdgePruning();
                 lbBlocks = bpComparisonCleaning.refineBlocks(lbBlocks);
-                timer.toc("block building");
+                Timer.tell("block building");
 
                 // Measure similarities
-                timer.tic("Similarity mapping");
+                Timer.tic("Similarity mapping");
                 ProfileMatcher pm = new ProfileMatcher(repr, sim);
                 lspPairs = pm.executeComparisons(lbBlocks, lpEntities);
-                timer.toc("Similarity mapping");
+                Timer.tell("Similarity mapping");
+                verbose("Extracted " + lspPairs.getSimilarities().length + " similarity pairs.");
             }
             verbose("Done mapping comparisons");
         }
@@ -101,13 +105,17 @@ public class YDSMatcher {
 
         }
 
+        if (pparser.hasOption("write_sim")) writeSimilarities(lspPairs, sr.getReadOrder(pparser.getReadOrder()));
+
         // Perform clustering
-        timer.tic("Clustering");
+        Timer.tic("Clustering");
         verbose("\nClustering");
         IEntityClustering ie = new RicochetSRClustering();
         List<EquivalenceCluster> lClusters = ie.getDuplicates((SimilarityPairs)lspPairs);
-        timer.toc("Clustering");
+        Timer.tell("Clustering");
         verbose("Done clustering");
+
+        if(lClusters.isEmpty()) verbose("No clusters!");
 
         // Show clusters
         // For every cluster
@@ -141,6 +149,40 @@ public class YDSMatcher {
         System.out.println(msg);
     }
 
+    public static void writeSimilarities(SimilarityPairs sp, List<Pair<String,Integer>> rdo){
+        verbose("Writing similarities.");
+        HashMap<Integer,String> rdomap = new HashMap<>();
+        for(Pair<String,Integer> p : rdo) {
+            if (rdomap.containsKey(p.d2)){ System.out.println("Already in map:" + p.d2); return;}
+            rdomap.put(p.d2, p.d1);
+        }
+        try{
+            BufferedWriter bf = new BufferedWriter(new FileWriter("similarities.txt"));
+            bf.write("name1,name2,sim\n");
+            int count=0;
+            for(int i=0;i<sp.getEntityIds1().length;++i){
+                int i1 = sp.getEntityIds1()[i];
+                int i2 = sp.getEntityIds2()[i];
+                if(!rdomap.containsKey(i1)) {
+                    System.out.println("Not in map:" + i1); return;
+                }
+                if(!rdomap.containsKey(i2)) {
+                    System.out.println("Not in map:" + i2); return;
+                }
+                String name1 = rdomap.get(i1);
+                String name2 = rdomap.get(i2);
+                double sim = sp.getSimilarities()[i];
+                // System.out.print(name1 + "," + name2 + "," + sim + "\n");
+                bf.write(name1 + "," + name2 + "," + sim + "\n");
+                ++count;
+            }
+            bf.close();
+            verbose("Wrote " + count + "similarities.");
+        }
+            catch(Exception ex){
+                ex.printStackTrace();
+        }
+    }
     public static String entityProfileToString(EntityProfile epToRender) {
         StringBuffer sb = new StringBuffer();
 

@@ -1,17 +1,17 @@
 maxlist =
-# cosine, jaccard
+# cosine, jaccard, nvs
 similarity = cosine
-representation = bow
+# bow_wN, bow_tfidf_wN, ngg_wN, ngg_cN, N=integer
+representation = bow_w2
 # input file or folder. csv or json suffixies are autoread by the default entity reader
 input_folder = /path/to/input/data/folder
 read_order = /path/to/read/order/file
 sim_field = nvs_sim
 # read mode:
 # entities (name, type, offset, length ) per line
-# csv
 # similarities (csv with file pairs and various attributes per column
 # or raw (raw text)
 read_mode = entities
-languages = english, spanish, french
 # misc
 verbosity = true
+options =

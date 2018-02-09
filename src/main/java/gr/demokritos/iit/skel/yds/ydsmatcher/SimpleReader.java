@@ -20,6 +20,7 @@ public class SimpleReader {
         this.langs = langs;
         this.verbosity = verbosity;
         this.read_mode = read_mode;
+        verbose("Read mode:" + read_mode);
     }
 
     public List<Pair<String,Integer>>  getReadOrder(String read_order_file){
@@ -35,6 +36,7 @@ public class SimpleReader {
                 String [] parts = line.trim().split(" ");
                 readorder.add(new Pair(parts[0], Integer.parseInt(parts[1])));
             }
+            bf.close();
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -63,7 +65,7 @@ public class SimpleReader {
             try {
                 elist.addAll(readFile(new File(full_path)));
             }catch(Exception ex){
-                System.out.println(ex.getMessage());
+                System.out.println("Exception: " + ex.getMessage());
             }
         }
         return elist;
@@ -108,12 +110,11 @@ public class SimpleReader {
     public List<EntityProfile> readFile(File ff){
         if (read_mode.equals("csv")) return readCsvFile(ff);
         if (read_mode.equals("entities")) return readJsonEntityFile(ff);
-        if (read_mode.equals("raw")) return readTextFile(ff);
+        if (read_mode.equals("texts")) return readTextFile(ff);
         System.err.println("Undefined read mode: [" + read_mode + "]");
         return null;
     }
     List<EntityProfile> readJsonEntityFile(File ff){
-        verbose("Reader : json entity");
         ArrayList<EntityProfile> elist = new ArrayList<>();
         try{
             BufferedReader bf = new BufferedReader(new FileReader(ff));
@@ -131,6 +132,7 @@ public class SimpleReader {
                 ep.addAttribute("length",parts[3]);
                 elist.add(ep);
             }
+            bf.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -149,6 +151,7 @@ public class SimpleReader {
            while((line = bf.readLine()) != null){
                sb.append(line);
            }
+           bf.close();
        } catch (FileNotFoundException e) {
            e.printStackTrace();
        } catch (IOException e) {
@@ -182,7 +185,7 @@ public class SimpleReader {
         if (data == null) return null;
         System.out.println("Num read:" + data.size());
 
-        Timer.toctell("csvread");
+        Timer.tell("csvread");
 
         // get readorder to hashmap, skipping preceeding folder
         HashMap<String,Integer> readorder = new HashMap<>();
@@ -204,7 +207,10 @@ public class SimpleReader {
             if(data.get(0)[simFieldIndex ].equals(simfield)) break;
         }
         if(simFieldIndex  == data.get(0).length){
-            System.err.println("Could not find similarity field:" + simfield +" in the header :" + data.get(0));
+            System.err.print("Could not find similarity field:" + simfield +" in the header :");
+            for(String s: data.get(0)) System.out.print(s + " ");
+            System.out.println();
+
         }
         data.remove(0);
         int count = 0;
@@ -215,12 +221,12 @@ public class SimpleReader {
             idxs2.add(readorder.get(datum[1]));
             sims.add(Double.parseDouble(datum[simFieldIndex]));
         }
-        Timer.toctell("Parse csv");
+        Timer.tell("Parse csv");
         Timer.tictell("Convert to jedai-compatible structs");
         int [] idxs1arr = idxs1.stream().mapToInt(i->i).toArray();
         int [] idxs2arr = idxs2.stream().mapToInt(i->i).toArray();
         double [] simsarr = sims.stream().mapToDouble(i->i).toArray();
-        Timer.toctell("Convert to jedai-compatible structs");
+        Timer.tell("Convert to jedai-compatible structs");
         SimilarityPairs sp = new SimilarityPairs(false, new ArrayList<>());
         sp.setEntityIds1(idxs1arr);
         sp.setEntityIds2(idxs2arr);
