@@ -58,6 +58,9 @@ public class PropertiesParser {
         }
         return Arrays.asList(parts);
     }
+    public double getClusteringThreshold(){
+        return Double.parseDouble(props.getProperty("clustering_threshold").trim());
+    }
     public RepresentationModel getRepresentation(){
         String repr_str = props.getProperty("representation").trim();
 

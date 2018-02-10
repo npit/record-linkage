@@ -1,6 +1,6 @@
-import subprocess
+import subprocess,os, datetime
 from os.path import join
-import os
+
 
 def write_config(config, filepath):
     with open(filepath, "w") as f:
@@ -23,9 +23,12 @@ def main():
     representations += ["ngg_w%d" % i for i in range(1,4)]
     # character ng graphs, from bi to fourgrams
     representations += ["ngg_c%d" % i for i in range(2,5)]
-
     # compatible similarities per representation
     sims = {"bow":["cosine", "jaccard"], "ngg":["nvs"]}
+    # clustering approaches
+    clustering = ["ricochet"]
+    # clustering thresholds
+    clust_thresholds = [str(x/10) for x in list(range(1,10))]
 
     # do the work
     ######################
@@ -46,8 +49,10 @@ def main():
         os.mkdir(results_folder)
 
     config = {}
+    timings = {}
     config["verbosity"] = "false"
-    for dset in datasets:
+
+    for dset in datasets[:1]:
         files_gt = dset["files_gt"]
         topics_gt = dset["topics_gt"]
         results_dset_folder = join(results_folder, dset["results"])
@@ -63,18 +68,30 @@ def main():
                 config["representation"] = repr
                 repr_prefix = repr.split("_")[0]
                 sims_list = sims[repr_prefix]
+
                 for sim in sims_list:
                     config["similarity"] = sim
 
-                    config_id = ".".join([dset["name"], read_mode, repr, sim])
-                    config_file = join(results_dset_folder, "config." + config_id)
-                    output_file = join(results_dset_folder, "results." + config_id)
-                    write_config(config, config_file)
+                    for clust in clustering:
+                        config["clustering"] = clust
 
-                    # run!
-                    cmds = ["./execute.sh", config_file]
-                    print(cmds)
-                    # subprocess.run(cmd, stdout = output_file)
+                        for c_thresh in clust_thresholds:
+                            config["clustering_threshold"] = c_thresh
+
+                            config_id = ".".join([dset["name"], read_mode, repr, sim, clust, c_thresh])
+                            config_file = join(results_dset_folder, "config." + config_id)
+                            output_file = join(results_dset_folder, "results." + config_id)
+                            write_config(config, config_file)
+
+                            # run!
+                            cmd = ["./execute.sh", config_file]
+                            print(cmd)
+                            timestart = datetime.datetime.now()
+                            """
+                            with open(output_file,"w") as ofile:
+                                subprocess.run(cmd, stdout = ofile)
+                            """
+                            timings[config_id] = (datetime.datetime.now() - timestart).seconds
 
 
 if __name__ == "__main__":

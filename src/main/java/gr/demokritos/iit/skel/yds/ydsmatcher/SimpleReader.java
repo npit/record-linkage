@@ -53,7 +53,6 @@ public class SimpleReader {
     }
 
 
-
     public List<EntityProfile> read_data(String path, String read_order_file){
         List<Pair<String,Integer>>  readorder = getReadOrder(read_order_file);
         List<EntityProfile> elist = new ArrayList<>();
@@ -116,6 +115,7 @@ public class SimpleReader {
     }
     List<EntityProfile> readJsonEntityFile(File ff){
         ArrayList<EntityProfile> elist = new ArrayList<>();
+        EntityProfile ep = new EntityProfile(ff.getName());
         try{
             BufferedReader bf = new BufferedReader(new FileReader(ff));
             String line;
@@ -123,21 +123,30 @@ public class SimpleReader {
                 line = line.trim();
                 if (line.isEmpty()) continue;
                 String[] parts = line.split(",");
-
-                String code = Integer.toString((parts[0]+parts[1]+parts[2]+parts[3]).hashCode());
-                EntityProfile ep = new EntityProfile(code);
+                // keep only name & type
+                StringBuilder sb = new StringBuilder();
+                for(String p : parts) sb.append(p);
+                String type = "attribute";
+                if(parts.length < 1) type = parts[1];
                 ep.addAttribute("name",parts[0]);
-                ep.addAttribute("type",parts[1]);
-                ep.addAttribute("offset",parts[2]);
-                ep.addAttribute("length",parts[3]);
-                elist.add(ep);
+                ep.addAttribute(type,parts[0]);
             }
             bf.close();
         } catch (FileNotFoundException e) {
+            System.err.println("Entity reading exception:" + e.getMessage());
             e.printStackTrace();
+            return null;
         } catch (IOException e) {
+            System.err.println("Entity reading exception:" + e.getMessage());
             e.printStackTrace();
+            return null;
         }
+        catch(Exception e){
+            System.err.println("Entity reading exception:" + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+        elist.add(ep);
         return elist;
     }
 

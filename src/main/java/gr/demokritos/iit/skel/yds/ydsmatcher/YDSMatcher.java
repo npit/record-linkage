@@ -110,7 +110,8 @@ public class YDSMatcher {
         // Perform clustering
         Timer.tic("Clustering");
         verbose("\nClustering");
-        IEntityClustering ie = new RicochetSRClustering();
+        double clustering_threshold = pparser.getClusteringThreshold();
+        IEntityClustering ie = new RicochetSRClustering(clustering_threshold);
         List<EquivalenceCluster> lClusters = ie.getDuplicates((SimilarityPairs)lspPairs);
         Timer.tell("Clustering");
         verbose("Done clustering");
