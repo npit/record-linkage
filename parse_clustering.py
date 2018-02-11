@@ -108,22 +108,23 @@ if __name__ == "__main__":
         if len(topics) == 1:
             continue
         num_cprs +=1
-        print("topics:",topics)
         # percentage of pairs that belong to same cluster
         combos = list(itertools.combinations(topics, 2))
         combos.sort()
         sametopic_combos = [1 if x[0] == x[1] else 0 for x in combos]
-        print(combos)
-        print(sametopic_combos)
         clust_cpr = sum(sametopic_combos) / len(combos)
-        print("cpr: ",clust_cpr)
+        if args.verbose:
+            print("cpr for cluster topic",predtop,":",clust_cpr)
         marginal_cprs.append(clust_cpr)
 
-    print("marginals:",len(marginal_cprs))
+    if args.verbose:
+        print("marginals:",len(marginal_cprs))
     cpr = sum(marginal_cprs)/len(marginal_cprs)
     num_clusters_pred_gt = [len(predicted), len(topics2files)]
     # for pcpr, get the ratio of missing or extra clusters
-    pcpr_coeff = max(num_clusters_pred_gt) / min(num_clusters_pred_gt)
+    pcpr_coeff = min(num_clusters_pred_gt) / max(num_clusters_pred_gt)
+    if args.verbose:
+        print("pcpr coefficient: ",pcpr_coeff)
     pcpr = cpr * pcpr_coeff
     means += [cpr, pcpr]
 

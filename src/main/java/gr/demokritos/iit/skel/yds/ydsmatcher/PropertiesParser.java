@@ -37,7 +37,7 @@ public class PropertiesParser {
         else if(similarity_str.toLowerCase().equals("nvs"))
             return SimilarityMetric.GRAPH_NORMALIZED_VALUE_SIMILARITY;
         else{
-            System.err.println("Undefined similarity param:" + similarity_str);
+            System.err.println("Undefined similarity param: [" + similarity_str + "]");
             return null;
         }
     }
@@ -82,7 +82,7 @@ public class PropertiesParser {
             if(repr_str.endsWith("_c3")) return RepresentationModel.CHARACTER_TRIGRAM_GRAPHS;
             if(repr_str.endsWith("_c4")) return RepresentationModel.CHARACTER_FOURGRAM_GRAPHS;
         }
-        System.err.println("Undefined representation param:" + repr_str);
+        System.err.println("Undefined representation param: [" + repr_str + "]");
         return null;
 
     }

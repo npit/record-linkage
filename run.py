@@ -93,6 +93,5 @@ def main():
                             """
                             timings[config_id] = (datetime.datetime.now() - timestart).seconds
 
-
 if __name__ == "__main__":
     main()
