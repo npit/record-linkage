@@ -1,4 +1,4 @@
-import subprocess,os, datetime
+import subprocess,os, datetime, argparse
 from os.path import join
 
 
@@ -9,8 +9,22 @@ def write_config(config, filepath):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--overwrite",action="store_true",dest="overwrite")
+    args = parser.parse_args()
+
     results_folder = "results"
     base_config = "config"
+    evaluation_file = "evaluation.txt"
+    timings_file = "timings.txt"
+
+    if not args.overwrite:
+        if os.path.exists(evaluation_file):
+            print("Evaluation file",evaluation_file,"already exists.")
+            exit(1)
+        if os.path.exists(timings_file):
+            print("Timings file",timings_file,"already exists.")
+            exit(1)
 
     # dataset parameter files
     files = ["multiling.conf", "ng20.conf"]
@@ -49,10 +63,10 @@ def main():
         os.mkdir(results_folder)
 
     config = {}
-    timings = {}
     config["verbosity"] = "false"
+    results = []
 
-    for dset in datasets[:1]:
+    for dset in datasets:
         files_gt = dset["files_gt"]
         topics_gt = dset["topics_gt"]
         results_dset_folder = join(results_folder, dset["results"])
@@ -81,17 +95,27 @@ def main():
                             config_id = ".".join([dset["name"], read_mode, repr, sim, clust, c_thresh])
                             config_file = join(results_dset_folder, "config." + config_id)
                             output_file = join(results_dset_folder, "results." + config_id)
+                            raw_output_file = join(results_dset_folder, "raw_results." + config_id)
                             write_config(config, config_file)
 
                             # run!
                             cmd = ["./execute.sh", config_file]
                             print(cmd)
                             timestart = datetime.datetime.now()
-                            """
                             with open(output_file,"w") as ofile:
-                                subprocess.run(cmd, stdout = ofile)
-                            """
-                            timings[config_id] = (datetime.datetime.now() - timestart).seconds
+                                with open(raw_output_file,"w") as raw_ofile:
+                                    subprocess.run(cmd, stdout = ofile, stderr = raw_ofile)
+                            time_elapsed = (datetime.datetime.now() - timestart).seconds
+
+                            # evaluate
+                            eval_cmd = ["python3", "parse_clustering.py", topics_gt, output_file,"--name",config_id]
+                            print(eval_cmd)
+                            with open(evaluation_file,"a") as ofile:
+                                subprocess.run(eval_cmd, stdout = ofile)
+
+                            # write timings per configuration
+                            with open(timings_file,"a") as ofile:
+                                ofile.write("%s,%d\n" % (config_id,time_elapsed))
 
 if __name__ == "__main__":
     main()

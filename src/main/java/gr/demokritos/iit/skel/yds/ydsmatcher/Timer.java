@@ -21,7 +21,7 @@ public class Timer {
     public static void peek(String msg){
         long msec = tocPeek(msg);
         String tdiff = tostr(msec);
-        System.out.println(String.format("Elapsed for [%s] : %s", msg, tdiff ));
+        System.err.println(String.format("Elapsed for [%s] : %s", msg, tdiff ));
     }
 
     public static Long tocPeek(String msg){
@@ -44,13 +44,13 @@ public class Timer {
 
     public static void tictell(String msg){
 
-        System.out.println("Starting timing: " + msg + "  [" + tic(msg) + "]");
+        System.err.println("Starting timing: " + msg + "  [" + tic(msg) + "]");
     }
 
     public static void tell(String msg){
         long msec = toc(msg);
         String tdiff = tostr(msec);
-        System.out.println(String.format("Elapsed for [%s] : %s", msg, tdiff ));
+        System.err.println(String.format("Elapsed for [%s] : %s", msg, tdiff ));
     }
 
     public static String tostr(long msecs){

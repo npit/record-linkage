@@ -18,79 +18,93 @@ if __name__ == "__main__":
     parser.add_argument("gt", help = "Ground truth. Space-delimited file indexes per line.")
     parser.add_argument("res", help = "Clustering results. Space-delimited file indexes per line.")
     parser.add_argument("--name")
-    parser.add_argument("--verbose", action="store_true", dest = "verbose")
+    parser.add_argument("--verbose", dest = "verbose")
     args = parser.parse_args()
 
     # read ground truth
     topics2files = {}
     files2topics = {}
-    with open(args.gt) as f:
-        for line in f:
+    with open(args.gt) as fpr:
+        for line in fpr:
             line = line.strip().split()
             topic, files = line[0], line[1:]
             if topic not in topics2files:
                 topics2files[topic] = []
             topics2files[topic].extend(files)
             for f in files:
-                if f in files2topics:
-                    print("File %s already in file gt!" % f)
-                    exit(1)
+                assert f not in files2topics, "File %s already in file gt!" % f
                 files2topics[f] = topic
+
+    # config name
+    name = args.name if args.name else "test_run"
 
     # store a dict of predicted topic clusters with members
     predicted = {}
     # read results file
-    with open(args.res) as f:
-        for i, line in enumerate(f):
+    with open(args.res) as fpr:
+        for i, line in enumerate(fpr):
             # read the file indexes
             idxs = line.strip().split()
             # map file indexes to their ground truth topics indexes
-            topics = [files2topics[f] for f in idxs]
+            cluster_topics = [files2topics[f] for f in idxs]
             # cluster topic is the most common in the cluster. if a single most common does not exist, discard cluster
             # count'em
-            counts = [(x,topics.count(x)) for x in set(topics)]
+            counts = [(x,cluster_topics.count(x)) for x in sorted(list(set(cluster_topics)))]
             # skip if there is no most frequent topic
             if all([x == counts[0][1] for x in counts]):
-                print("Cluster discarded:",topics)
+                print("Cluster discarded:",cluster_topics)
                 continue
             # else, set the most frequent to be the cluster topic
-            cluster_topic = max(counts, key = lambda x : x[1])[0]
+            majority_topic = max(counts, key = lambda x : x[1])[0]
             if args.verbose:
-                print("Cluster #%d" % (i+1), "topic:",cluster_topic,"from topics:",topics)
+                print("Cluster #%d" % (i+1), "topic:",majority_topic,"from topics:",cluster_topics)
             # assign files to cluster
-            if cluster_topic not in predicted:
-                predicted[cluster_topic] = []
-            predicted[cluster_topic].extend(idxs)
+            if majority_topic not in predicted:
+                predicted[majority_topic] = []
+            predicted[majority_topic].extend(idxs)
 
+
+    sorted_pred = list(map(str,sorted([int(x) for x in predicted])))
 
     if args.verbose:
         print("Unmerged file assignments:")
-        for topic in predicted:
+        for topic in sorted_pred:
             print("Clust.topic:",topic,", member topics:",predicted[topic])
 
     # drop duplicate file occurences in a cluster, and map to topic indexes
-    for topic in predicted:
+    for topic in sorted_pred:
         unique_fidxs = list(set(predicted[topic]))
         predicted[topic] = [files2topics[f] for f in unique_fidxs]
 
     if args.verbose:
         print("Merged and mapped file assignments:")
-        for topic in predicted:
+        for topic in sorted_pred:
             print("Clust.topic:",topic,", member topics:",predicted[topic])
 
+    # compute evaluations
+    header = "precision recall f1 cpr pcpr"
+    if not predicted:
+        if args.verbose:
+            print(header)
+        print(name," ".join(["0.0" for _ in range(len(header.split()))]))
+        exit(0)
+    if args.verbose:
+        print("Computing evaluation metrics.")
     # compute precision, recall and f-score
     precs, recs, fscores = [], [], []
-    for ptopic in predicted:
+    for ptopic in sorted_pred:
         # prec, rec, f
-        pred_files = predicted[ptopic]
-        gt_files = topics2files[ptopic]
-        true_pos = [x for x in pred_files if x in gt_files]
-        prec = len(true_pos) / len(pred_files)
-        rec = len(true_pos) / len(gt_files)
-        if true_pos:
+        pred_topics = predicted[ptopic]
+        num_gt= len(topics2files[ptopic])
+        num_true_pos = pred_topics.count(ptopic)
+        prec = num_true_pos / len(pred_topics)
+        rec = num_true_pos / num_gt
+        if num_true_pos:
             fscore = 2 * (prec * rec) / (prec + rec)
         else:
             fscore = 0.0
+        if args.verbose:
+            print("Topic:",ptopic,"num tp, p, gtp, prec, rec, f",num_true_pos,len(pred_topics),num_gt,prec,rec,fscore)
         precs.append(prec)
         recs.append(rec)
         fscores.append(fscore)
@@ -128,6 +142,7 @@ if __name__ == "__main__":
     pcpr = cpr * pcpr_coeff
     means += [cpr, pcpr]
 
-    name = args.name if args.name else "test_run"
+    if args.verbose:
+        print(header)
     print(name,*means)
 
