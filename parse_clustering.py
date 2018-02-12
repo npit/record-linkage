@@ -82,7 +82,7 @@ if __name__ == "__main__":
             print("Clust.topic:",topic,", member topics:",predicted[topic])
 
     # compute evaluations
-    header = "precision recall f1 cpr pcpr"
+    header = "mi-precision mi-recall mi-f1 ma-precision ma-recall ma-f1 cpr pcpr"
     if not predicted:
         if args.verbose:
             print(header)
@@ -90,12 +90,14 @@ if __name__ == "__main__":
         exit(0)
     if args.verbose:
         print("Computing evaluation metrics.")
+
     # compute precision, recall and f-score
     precs, recs, fscores = [], [], []
-    for ptopic in sorted_pred:
+    num_macro_tp, num_macro_gt, num_macro_pred = 0, 0, 0
+    for ptopic in topics2files:
         # prec, rec, f
         pred_topics = predicted[ptopic]
-        num_gt= len(topics2files[ptopic])
+        num_gt = len(topics2files[ptopic])
         num_true_pos = pred_topics.count(ptopic)
         prec = num_true_pos / len(pred_topics)
         rec = num_true_pos / num_gt
@@ -103,17 +105,30 @@ if __name__ == "__main__":
             fscore = 2 * (prec * rec) / (prec + rec)
         else:
             fscore = 0.0
+
         if args.verbose:
-            print("Topic:",ptopic,"num tp, p, gtp, prec, rec, f",num_true_pos,len(pred_topics),num_gt,prec,rec,fscore)
+            print("Topic:",ptopic,"num tp, p, gtp" ,num_true_pos,len(pred_topics),num_gt,"prec, rec, f",prec,rec,fscore)
+        num_macro_tp += num_true_pos
+        num_macro_gt += num_gt
+        num_macro_pred += len(pred_topics)
+
         precs.append(prec)
         recs.append(rec)
         fscores.append(fscore)
 
-    # mean prec, rec, f values
-    means = [sum(precs)/len(precs), \
+    # macro prec, rec, f values
+    macro_scores = [sum(precs)/len(precs), \
          sum(recs)/len(recs), \
          sum(fscores) / len(fscores)]
+    # micro prec, rec, f values
+    micro_scores = [num_macro_tp / num_macro_pred, \
+                    num_macro_tp / num_macro_gt ]
+    micro_scores += [ 2 * micro_scores[0] * micro_scores[1] / (micro_scores[0] + micro_scores[1]) ]
+    scores = micro_scores + macro_scores
 
+
+    if args.verbose:
+        print("Macro scores:", macro_scores,"| micro scores:", micro_scores)
 
     # cpr measure: examine the topics per cluster
     marginal_cprs = []
@@ -140,9 +155,9 @@ if __name__ == "__main__":
     if args.verbose:
         print("pcpr coefficient: ",pcpr_coeff)
     pcpr = cpr * pcpr_coeff
-    means += [cpr, pcpr]
+    scores += [cpr, pcpr]
 
     if args.verbose:
         print(header)
-    print(name,*means)
+    print(name,*scores)
 

@@ -123,13 +123,14 @@ public class SimpleReader {
                 line = line.trim();
                 if (line.isEmpty()) continue;
                 String[] parts = line.split(",");
-                // keep only name & type
-                StringBuilder sb = new StringBuilder();
-                for(String p : parts) sb.append(p);
-                String type = "attribute";
-                if(parts.length < 1) type = parts[1];
-                ep.addAttribute("name",parts[0]);
-                ep.addAttribute(type,parts[0]);
+                // keep only hashed values of name & type
+                String hash = Integer.toString(parts[0].hashCode());
+                ep.addAttribute("name",hash);
+                if (parts.length > 1){
+                    hash = Integer.toString(parts[1].hashCode());
+                    ep.addAttribute("type",hash);
+                }
+
             }
             bf.close();
         } catch (FileNotFoundException e) {
