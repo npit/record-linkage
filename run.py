@@ -10,18 +10,22 @@ def write_config(config, filepath):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--simulate",action="store_true",dest="simulate")
     parser.add_argument("--overwrite",action="store_true",dest="overwrite")
     args = parser.parse_args()
 
-    results_folder = "results"
+    results_folder = "results_ml_clustthresh"
     base_config = "config"
-    evaluation_file = "evaluation.txt"
-    timings_file = "timings.txt"
+    evaluation_file = join(results_folder, "evaluation.txt")
+    timings_file = join(results_folder, "timings.txt")
 
     # dataset parameter files
     # files = ["multiling.conf", "ng20.conf"]
-    files = ["multiling.mixgraph.conf", "ng20.mixgraph.conf"]
+    files = ["multiling.conf"]
+    # files = ["multiling.mixgraph.conf", "ng20.mixgraph.conf"]
 
+    if not os.path.exists(results_folder):
+        os.mkdir(results_folder)
     if not args.overwrite:
         if os.path.exists(evaluation_file):
             print("Evaluation file",evaluation_file,"already exists.")
@@ -32,12 +36,12 @@ def main():
 
     # representations compatible as per the jedai framework
     # bow and tftdf-bow, unigrams to trigrams: restrict to unigrams and trigrams
-    representations = ["bow_w%d" % i for i in ["1","3"]]
-    representations += ["bow_tfidf_w%d" % i for i in ["1","3"]]
+    representations = ["bow_w%d" % i for i in [1,3]]
+    representations += ["bow_tfidf_w%d" % i for i in [1,3]]
     # word ng graphs, from uni to trigrams: restrict to trigrams
-    representations += ["ngg_w%d" % i for i in ["3"]]
+    representations += ["ngg_w%d" % i for i in [3]]
     # character ng graphs, from bi to fourgrams: restrict to trigrams
-    representations += ["ngg_c%d" % i for i in ["3"]]
+    representations += ["ngg_c%d" % i for i in [3]]
     # compatible similarities per representation
     sims = {"bow":["cosine", "jaccard"], "ngg":["nvs"]}
     # clustering approaches
@@ -112,20 +116,23 @@ def main():
                             cmd = ["./execute.sh", config_file]
                             print(cmd)
                             timestart = datetime.datetime.now()
-                            with open(output_file,"w") as ofile:
-                                with open(raw_output_file,"w") as raw_ofile:
-                                    subprocess.run(cmd, stdout = ofile, stderr = raw_ofile)
+                            if not args.simulate:
+                                with open(output_file,"w") as ofile:
+                                    with open(raw_output_file,"w") as raw_ofile:
+                                        subprocess.run(cmd, stdout = ofile, stderr = raw_ofile)
                             time_elapsed = (datetime.datetime.now() - timestart).seconds
 
                             # evaluate
                             eval_cmd = ["python3", "parse_clustering.py", topics_gt, output_file,"--name",config_id]
                             print(eval_cmd)
-                            with open(evaluation_file,"a") as ofile:
-                                subprocess.run(eval_cmd, stdout = ofile)
+                            if not args.simulate:
+                                with open(evaluation_file,"a") as ofile:
+                                    subprocess.run(eval_cmd, stdout = ofile)
 
                             # write timings per configuration
-                            with open(timings_file,"a") as ofile:
-                                ofile.write("%s,%d\n" % (config_id,time_elapsed))
+                            if not args.simulate:
+                                with open(timings_file,"a") as ofile:
+                                    ofile.write("%s,%d\n" % (config_id,time_elapsed))
 
 if __name__ == "__main__":
     main()

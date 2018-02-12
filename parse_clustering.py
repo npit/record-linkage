@@ -65,6 +65,7 @@ if __name__ == "__main__":
 
 
     sorted_pred = list(map(str,sorted([int(x) for x in predicted])))
+    sorted_top = list(map(str,sorted([int(x) for x in topics2files])))
 
     if args.verbose:
         print("Unmerged file assignments:")
@@ -94,12 +95,18 @@ if __name__ == "__main__":
     # compute precision, recall and f-score
     precs, recs, fscores = [], [], []
     num_macro_tp, num_macro_gt, num_macro_pred = 0, 0, 0
-    for ptopic in topics2files:
+    for ptopic in sorted_top:
         # prec, rec, f
-        pred_topics = predicted[ptopic]
+        if ptopic in predicted:
+            pred_topics = predicted[ptopic]
+            num_true_pos = pred_topics.count(ptopic)
+            prec = num_true_pos / len(pred_topics)
+        else:
+            pred_topics = []
+            num_true_pos = 0
+            prec = 0
+
         num_gt = len(topics2files[ptopic])
-        num_true_pos = pred_topics.count(ptopic)
-        prec = num_true_pos / len(pred_topics)
         rec = num_true_pos / num_gt
         if num_true_pos:
             fscore = 2 * (prec * rec) / (prec + rec)
@@ -133,7 +140,8 @@ if __name__ == "__main__":
     # cpr measure: examine the topics per cluster
     marginal_cprs = []
     num_cprs = 0
-    for (predtop, topics) in predicted.items():
+    for ptopic in sorted_pred:
+        topics = predicted[ptopic]
         if len(topics) == 1:
             continue
         num_cprs +=1
@@ -143,7 +151,7 @@ if __name__ == "__main__":
         sametopic_combos = [1 if x[0] == x[1] else 0 for x in combos]
         clust_cpr = sum(sametopic_combos) / len(combos)
         if args.verbose:
-            print("cpr for cluster topic",predtop,":",clust_cpr)
+            print("cpr for cluster topic",ptopic,":",clust_cpr)
         marginal_cprs.append(clust_cpr)
 
     if args.verbose:
