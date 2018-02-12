@@ -18,6 +18,10 @@ def main():
     evaluation_file = "evaluation.txt"
     timings_file = "timings.txt"
 
+    # dataset parameter files
+    # files = ["multiling.conf", "ng20.conf"]
+    files = ["multiling.mixgraph.conf", "ng20.mixgraph.conf"]
+
     if not args.overwrite:
         if os.path.exists(evaluation_file):
             print("Evaluation file",evaluation_file,"already exists.")
@@ -25,9 +29,6 @@ def main():
         if os.path.exists(timings_file):
             print("Timings file",timings_file,"already exists.")
             exit(1)
-
-    # dataset parameter files
-    files = ["multiling.conf", "ng20.conf"]
 
     # representations compatible as per the jedai framework
     # bow and tftdf-bow, unigrams to trigrams
@@ -73,12 +74,21 @@ def main():
         if not os.path.exists(results_dset_folder):
             os.mkdir(results_dset_folder)
 
-        for read_mode in ["texts", "entities"]:
+        if "similarities" in dset:
+            modes = ["similarities"]
+            repr_list = ["ngg_loaded"]
+        else:
+            modes = ["texts", "entities"]
+            repr_list = representations
+
+        for read_mode in modes:
             config["read_order"] = files_gt
             config["input_path"] = dset[read_mode]
             config["read_mode"] = read_mode
+            if read_mode == "similarities":
+                config["sim_field"] = dset["sim_field"]
 
-            for repr in representations:
+            for repr in repr_list:
                 config["representation"] = repr
                 repr_prefix = repr.split("_")[0]
                 sims_list = sims[repr_prefix]

@@ -192,7 +192,7 @@ public class SimpleReader {
             e.printStackTrace();
         }
         if (data == null) return null;
-        System.out.println("Num read:" + data.size());
+        verbose("Num data read from similarities file: " + data.size());
 
         Timer.tell("csvread");
 
@@ -226,21 +226,49 @@ public class SimpleReader {
         Timer.tictell("Parse csv");
         for (String[] datum : data) {
             ++count;
+            if(!readorder.containsKey(datum[0])){
+                System.err.println("Missing from readorder : [" + datum[0] + "]");
+                return null;
+            }
+            if(!readorder.containsKey(datum[1])){
+                System.err.println("Missing from readorder : [" + datum[1] + "]");
+                return null;
+            }
             idxs1.add(readorder.get(datum[0]));
             idxs2.add(readorder.get(datum[1]));
-            sims.add(Double.parseDouble(datum[simFieldIndex]));
+            try{
+                sims.add(Double.parseDouble(datum[simFieldIndex]));
+            }catch(NumberFormatException ex){
+                System.err.println("Failed to parse double from : [" + datum[simFieldIndex] + "]");
+                return null;
+                
+            }
         }
+        verbose("Read idx1, idx2, sims: " + idxs1.size() + ", " + idxs2.size() + ", " + sims.size() );
         Timer.tell("Parse csv");
         Timer.tictell("Convert to jedai-compatible structs");
-        int [] idxs1arr = idxs1.stream().mapToInt(i->i).toArray();
-        int [] idxs2arr = idxs2.stream().mapToInt(i->i).toArray();
-        double [] simsarr = sims.stream().mapToDouble(i->i).toArray();
-        Timer.tell("Convert to jedai-compatible structs");
-        SimilarityPairs sp = new SimilarityPairs(false, new ArrayList<>());
-        sp.setEntityIds1(idxs1arr);
-        sp.setEntityIds2(idxs2arr);
-        sp.setSimilarities(simsarr);
-        return sp;
+        try{
+            int [] idxs1arr = new int[idxs1.size()];
+            int [] idxs2arr = new int[idxs2.size()];
+            double [] simsarr = new double[sims.size()];
+            for(int i=0;i<idxs1.size();++i) idxs1arr[i] = idxs1.get(i);
+            for(int i=0;i<idxs2.size();++i) idxs2arr[i] = idxs2.get(i);
+            for(int i=0;i<sims.size();++i) simsarr[i] = sims.get(i);
+            Timer.tell("Convert to jedai-compatible structs");
+            SimilarityPairs sp = new SimilarityPairs(false, new ArrayList<>());
+            sp.setEntityIds1(idxs1arr);
+            sp.setEntityIds2(idxs2arr);
+            sp.setSimilarities(simsarr);
+            return sp;
+        }
+        catch(OutOfMemoryError ex){
+            System.err.println("Out of memory:" + ex.getMessage());
+            ex.printStackTrace();
+        }catch(Exception ex){
+            System.err.println("Error:" + ex.getMessage());
+            ex.printStackTrace();
+        }
+        return null;
 
     }
 
