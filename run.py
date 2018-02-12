@@ -31,13 +31,13 @@ def main():
             exit(1)
 
     # representations compatible as per the jedai framework
-    # bow and tftdf-bow, unigrams to trigrams
-    representations = ["bow_w%d" % i for i in range(1,4)]
-    representations += ["bow_tfidf_w%d" % i for i in range(1,4)]
-    # word ng graphs, from uni to trigrams
-    representations += ["ngg_w%d" % i for i in range(1,4)]
-    # character ng graphs, from bi to fourgrams
-    representations += ["ngg_c%d" % i for i in range(2,5)]
+    # bow and tftdf-bow, unigrams to trigrams: restrict to unigrams and trigrams
+    representations = ["bow_w%d" % i for i in ["1","3"]]
+    representations += ["bow_tfidf_w%d" % i for i in ["1","3"]]
+    # word ng graphs, from uni to trigrams: restrict to trigrams
+    representations += ["ngg_w%d" % i for i in ["3"]]
+    # character ng graphs, from bi to fourgrams: restrict to trigrams
+    representations += ["ngg_c%d" % i for i in ["3"]]
     # compatible similarities per representation
     sims = {"bow":["cosine", "jaccard"], "ngg":["nvs"]}
     # clustering approaches
