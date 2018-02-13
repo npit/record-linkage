@@ -83,7 +83,7 @@ if __name__ == "__main__":
             print("Clust.topic:",topic,", member topics:",predicted[topic])
 
     # compute evaluations
-    header = "mi-precision mi-recall mi-f1 ma-precision ma-recall ma-f1 cpr pcpr"
+    header = "mi-precision mi-recall mi-f1 ma-precision ma-recall ma-f1 accuracy cpr pcpr"
     if not predicted:
         if args.verbose:
             print(header)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     # compute precision, recall and f-score
     precs, recs, fscores = [], [], []
-    num_macro_tp, num_macro_gt, num_macro_pred = 0, 0, 0
+    num_macro_tp, num_macro_gt, num_macro_pred, num_macro_positives_pred_or_gt = 0, 0, 0, 0
     for ptopic in sorted_top:
         # prec, rec, f
         if ptopic in predicted:
@@ -106,7 +106,8 @@ if __name__ == "__main__":
             num_true_pos = 0
             prec = 0
 
-        num_gt = len(topics2files[ptopic])
+        gt_topics = topics2files[ptopic]
+        num_gt = len(gt_topics)
         rec = num_true_pos / num_gt
         if num_true_pos:
             fscore = 2 * (prec * rec) / (prec + rec)
@@ -118,6 +119,7 @@ if __name__ == "__main__":
         num_macro_tp += num_true_pos
         num_macro_gt += num_gt
         num_macro_pred += len(pred_topics)
+        num_macro_positives_pred_or_gt += num_gt + len([x for x in pred_topics if x != ptopic])
 
         precs.append(prec)
         recs.append(rec)
@@ -131,7 +133,8 @@ if __name__ == "__main__":
     micro_scores = [num_macro_tp / num_macro_pred, \
                     num_macro_tp / num_macro_gt ]
     micro_scores += [ 2 * micro_scores[0] * micro_scores[1] / (micro_scores[0] + micro_scores[1]) ]
-    scores = micro_scores + macro_scores
+    accuracy = num_macro_tp / num_macro_positives_pred_or_gt
+    scores = micro_scores + macro_scores + [accuracy]
 
 
     if args.verbose:

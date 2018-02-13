@@ -14,15 +14,16 @@ def main():
     parser.add_argument("--overwrite",action="store_true",dest="overwrite")
     args = parser.parse_args()
 
-    results_folder = "results_ml_clustthresh"
+    results_folder = "results_ml_clustthresh_mixed"
     base_config = "config"
     evaluation_file = join(results_folder, "evaluation.txt")
     timings_file = join(results_folder, "timings.txt")
 
     # dataset parameter files
     # files = ["multiling.conf", "ng20.conf"]
-    files = ["multiling.conf"]
-    # files = ["multiling.mixgraph.conf", "ng20.mixgraph.conf"]
+    # files = ["multiling.conf"]
+    files = ["multiling_mixgraph.conf"]
+    # files = ["multiling_mixgraph.conf", "ng20_mixgraph.conf"]
 
     if not os.path.exists(results_folder):
         os.mkdir(results_folder)
@@ -114,7 +115,7 @@ def main():
 
                             # run!
                             cmd = ["./execute.sh", config_file]
-                            print(cmd)
+                            print(" ".join(cmd))
                             timestart = datetime.datetime.now()
                             if not args.simulate:
                                 with open(output_file,"w") as ofile:
@@ -124,7 +125,7 @@ def main():
 
                             # evaluate
                             eval_cmd = ["python3", "parse_clustering.py", topics_gt, output_file,"--name",config_id]
-                            print(eval_cmd)
+                            print(" ".join(eval_cmd))
                             if not args.simulate:
                                 with open(evaluation_file,"a") as ofile:
                                     subprocess.run(eval_cmd, stdout = ofile)
