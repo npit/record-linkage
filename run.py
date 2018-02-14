@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--overwrite",action="store_true",dest="overwrite")
     args = parser.parse_args()
 
-    results_folder = "results_ml_clustthresh_mixed"
+    results_folder = "results_thresh_0.1"
     base_config = "config"
     evaluation_file = join(results_folder, "evaluation.txt")
     timings_file = join(results_folder, "timings.txt")
@@ -22,8 +22,10 @@ def main():
     # dataset parameter files
     # files = ["multiling.conf", "ng20.conf"]
     # files = ["multiling.conf"]
-    files = ["multiling_mixgraph.conf"]
+    # files = ["multiling_mixgraph.conf"]
     # files = ["multiling_mixgraph.conf", "ng20_mixgraph.conf"]
+
+    files = ["multiling.conf", "ng20.conf", "multiling_mixgraph.conf", "ng20_mixgraph.conf"]
 
     if not os.path.exists(results_folder):
         os.mkdir(results_folder)
@@ -48,7 +50,8 @@ def main():
     # clustering approaches
     clustering = ["ricochet"]
     # clustering thresholds
-    clust_thresholds = [str(x/10) for x in list(range(1,10))]
+    # clust_thresholds = [str(x/10) for x in list(range(1,10))]
+    clust_thresholds = [0.1]
 
     # do the work
     ######################
@@ -71,6 +74,8 @@ def main():
     config = {}
     config["verbosity"] = "false"
     results = []
+
+    clust_thresholds = list(map(str,clust_thresholds))
 
     for dset in datasets:
         files_gt = dset["files_gt"]

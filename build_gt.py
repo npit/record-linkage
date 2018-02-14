@@ -5,7 +5,7 @@ import os
 Construct the ground truth for each dataset
 """
 
-def parse_multiling(infile):
+def parse_multiling(infile, verbose):
     print("Parsing multiling")
     # multiling msms source texts
     # set wether ground truth:
@@ -62,7 +62,7 @@ def parse_multiling(infile):
             f.write("%d %d\n" % (fileidx, files_to_topics[fileidx]))
 
 
-def parse_newsgroups(infile):
+def parse_newsgroups(infile, verbose):
     print("Parsing 20 newsgroups:")
     # 20 newsgroups sources
     # set wether ground truth:
@@ -75,33 +75,36 @@ def parse_newsgroups(infile):
 
 
     for topic_idx, topic in enumerate(os.listdir(infile)):
-        topics_mapping[topic] = len(topics_mapping)
+        # map topics to idxs
+        topics_mapping[topic] = topic_idx
         topics_to_files[topic_idx] = []
         topicfiles = sorted(os.listdir(join(infile,topic)))
-        print("Parsing topic:", topic,"with %d files" % len(topicfiles))
-
+        print("Parsing topic:", topic,":",topic_idx,"with %d files" % len(topicfiles))
 
         for i, file in enumerate(topicfiles):
+            file_path = join(topic,file)
             file_index = len(files_mapping)
-            files_mapping[join(topic,file)] = file_index
+            files_mapping[file_path] = file_index
             files_to_topics[file_index] = topic_idx
             topics_to_files[topic_idx].append(file_index)
+            if verbose:
+                print("File mapping:",file_path,file_index)
 
     # write topic to topic index
-    with open("20newsgroups_gt_topics2idxs.txt","w") as f:
+    with open("20newsgroups_gt_topicsMapping.txt","w") as f:
         for topic in topics_mapping:
             f.write("%s %d\n" % (topic, topics_mapping[topic]))
     # write file to file index
-    with open("20newsgroups_gt_files2idxs.txt","w") as f:
+    with open("20newsgroups_gt_filesMapping.txt","w") as f:
         for file in files_mapping:
             f.write("%s %d\n" % (file, files_mapping[file]))
-    # write gt per topic
-    with open("20newsgroups_gt_topics2files.txt","w") as f:
-        for topic in topics_to_files:
-            topic_idx = topics_to_files[topic]
-            f.write("%s %s\n" % (topic_idx, " ".join([str(x) for x in topics_to_files[topic]])))
-    # write gt per file index
-    with open("20newsgroups_gt_files2topics.txt","w") as f:
+
+    # write gt topic idx to file idx
+    with open("20newsgroups_gt_topicsIdx2fileIdx.txt","w") as f:
+        for topic_idx in topics_to_files:
+            f.write("%s %s\n" % (topic_idx, " ".join([str(x) for x in topics_to_files[topic_idx]])))
+    # write gt file idx to topic idx
+    with open("20newsgroups_gt_fileIdx2TopicIdx.txt","w") as f:
         for fileidx in files_to_topics:
             f.write("%d %d\n" % (fileidx, files_to_topics[fileidx]))
 
@@ -112,12 +115,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--multiling", dest="mling")
     parser.add_argument("--20news", dest="news")
+    parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
     if not (args.mling or args.news):
         print("Nothing to do.")
         exit(1)
 
     if args.mling:
-        parse_multiling(args.mling)
+        parse_multiling(args.mling, args.verbose)
     if args.news:
-        parse_newsgroups(args.news)
+        parse_newsgroups(args.news, args.verbose)

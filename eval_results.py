@@ -6,6 +6,7 @@ parser.add_argument("res")
 parser.add_argument("--exclude",nargs="*")
 parser.add_argument("--only",nargs="*")
 parser.add_argument("--verbose",action="store_true")
+parser.add_argument("--skip_zeros",action="store_true")
 args = parser.parse_args()
 
 
@@ -42,6 +43,10 @@ for metric in metrics:
               if not all([t in line for t in only_include]): continue
           parts = line.split()
           name, values = parts[0].split("."), parts[1:]
+          values = [float(v) for v in values]
+          if args.skip_zeros:
+              if all([v == 0.0 for v in values]):
+                continue
           if args.verbose:
               print(line)
               print(name)
@@ -50,7 +55,7 @@ for metric in metrics:
           val = values[metric_index]
           if thresh not in perthresh:
               perthresh[thresh] = []
-          perthresh[thresh].append(float(val))
+          perthresh[thresh].append(val)
 
 
           id = "_".join([dset, readmode, representation, sim, clust])
